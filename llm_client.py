@@ -4,6 +4,9 @@ import requests
 import config
 
 _SESSION = requests.Session()
+# 本地推理专用 session：完全忽略环境代理（避开 Clash SOCKS 劫持 localhost）
+_LOCAL_SESSION = requests.Session()
+_LOCAL_SESSION.trust_env = False
 
 
 class LLMError(Exception):
@@ -15,6 +18,9 @@ def _provider_conf(provider):
         return (config.OPENROUTER_BASE_URL + "/chat/completions",
                 config.OPENROUTER_API_KEY,
                 {"HTTP-Referer": "http://localhost", "X-Title": "LLM SecRange"})
+    if provider == "local":
+        # Ollama 本地，无需真实 key
+        return (config.OLLAMA_BASE_URL + "/chat/completions", "ollama", {})
     # 默认 deepseek 直连
     return (config.DEEPSEEK_BASE_URL + "/chat/completions",
             config.DEEPSEEK_API_KEY, {})
@@ -24,6 +30,10 @@ def chat(messages, temperature=0.7, max_tokens=1024, model=None,
          provider="deepseek", timeout=90):
     """messages: [{"role","content"}]。返回字符串内容。"""
     url, key, extra = _provider_conf(provider)
+    # 本地推理较慢，且 R1 蒸馏会先输出思维链，给更高的 token/超时上限
+    if provider == "local":
+        max_tokens = max(max_tokens, 2048)
+        timeout = max(timeout, 240)
     headers = {"Authorization": f"Bearer {key}", "Content-Type": "application/json", **extra}
     payload = {
         "model": model or config.DEEPSEEK_MODEL,
@@ -32,8 +42,10 @@ def chat(messages, temperature=0.7, max_tokens=1024, model=None,
         "max_tokens": max_tokens,
         "stream": False,
     }
+    # 本地 Ollama 用忽略环境代理的 session（Clash SOCKS 会劫持 localhost）
+    sess = _LOCAL_SESSION if provider == "local" else _SESSION
     try:
-        r = _SESSION.post(url, json=payload, headers=headers, timeout=timeout)
+        r = sess.post(url, json=payload, headers=headers, timeout=timeout)
     except requests.RequestException as e:
         raise LLMError(f"请求 {provider} 失败：{e}")
     if r.status_code != 200:

@@ -30,10 +30,18 @@
 
 右上角 `target` 是**目标模型下拉选择器**，小模型优先。可对比同一攻击在不同模型上的鲁棒性差异——小模型更易被绕过，大模型守卫更严：
 
+- **🖥️ 本地部署**：DeepSeek-R1 8B（Ollama，完全离线、数据不出本机）
 - **🇨🇳 国产**：DeepSeek V4 Flash（默认/直连）、通义千问 Qwen2.5-7B / Qwen3-8B、智谱 GLM-4.7-Flash、MiniMax M2.5
 - **🌍 国外小模型**：Llama 3.2 1B/3B、Llama 3.1 8B、Google Gemma 3 4B、Microsoft Phi-4 Mini、Mistral Ministral 3B、OpenAI GPT-5 Nano / GPT-4o Mini
 
-> 切换的模型会同时作用于对话生成与 LLM 守卫。DeepSeek 走直连，其余经 **OpenRouter** 调用；在 [modules/modelsel.py](modules/modelsel.py) 的 `MODELS` 里加一行即可扩充。
+> 切换的模型会同时作用于对话生成与 LLM 守卫。DeepSeek 走直连，云端小模型经 **OpenRouter**，本地模型经 **Ollama**；在 [modules/modelsel.py](modules/modelsel.py) 的 `MODELS` 里加一行即可扩充。
+
+**启用本地 DeepSeek 8B**（可选，离线靶机）：
+```bash
+ollama serve &              # 启动本地推理服务
+ollama pull deepseek-r1:8b  # 拉取模型（约 5GB）
+# 然后在右上角下拉选「DeepSeek-R1 8B（本地）」即可
+```
 
 ---
 

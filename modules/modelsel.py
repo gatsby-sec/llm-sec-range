@@ -5,6 +5,9 @@
 from flask import session
 
 MODELS = [
+    # —— 本地部署 ——
+    {"id": "local-deepseek-8b", "label": "DeepSeek-R1 8B（本地）", "note": "🖥️ 本地·Ollama",
+     "provider": "local", "model": "deepseek-r1:8b"},
     # —— 国产 ——
     {"id": "deepseek-flash", "label": "DeepSeek V4 Flash", "note": "🇨🇳 国产·默认",
      "provider": "deepseek", "model": "deepseek-chat"},
@@ -34,7 +37,8 @@ MODELS = [
     {"id": "gpt4o-mini", "label": "OpenAI GPT-4o Mini", "note": "🌍 国外·OpenAI",
      "provider": "openrouter", "model": "openai/gpt-4o-mini"},
 ]
-DEFAULT = MODELS[0]["id"]
+# 默认用稳定的云端 Flash（本地模型可能还在下载/推理慢，不设为默认）
+DEFAULT = "deepseek-flash"
 _BY_ID = {m["id"]: m for m in MODELS}
 
 
