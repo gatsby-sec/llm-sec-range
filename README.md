@@ -6,7 +6,7 @@
 
 提示注入闯关 · OWASP LLM Top 10 · 脆弱 Agent 靶场 · 靶场资料聚合
 
-被攻击的目标模型接入 **DeepSeek**，真实可被绕过；Agent 危险操作隔离在沙箱 / Docker 容器内。
+目标模型可自由切换——**DeepSeek 直连 / OpenRouter 中转站（国产+国外十余款小模型）/ 本地 Ollama 离线**，真实可被绕过；Agent 危险操作隔离在沙箱 / Docker 容器内。
 
 ![home](docs/screenshots/01-home.png)
 
