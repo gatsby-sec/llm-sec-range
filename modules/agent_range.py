@@ -10,7 +10,7 @@ from flask import Blueprint, render_template, request, jsonify, session
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "agent_sandbox"))
 import sandbox  # noqa: E402
 import llm_client  # noqa: E402
-from modules import conversations  # noqa: E402
+from modules import conversations, modelsel  # noqa: E402
 
 bp = Blueprint("agent", __name__, url_prefix="/agent")
 
@@ -63,10 +63,11 @@ def run():
                [{"role": "user", "content": user_msg}]
     events = set()
     final_answer = ""
+    model = modelsel.current()
 
     for step in range(MAX_STEPS):
         try:
-            out = llm_client.chat(messages, temperature=0.3, max_tokens=500)
+            out = llm_client.chat(messages, temperature=0.3, max_tokens=500, model=model)
         except llm_client.LLMError as e:
             return jsonify({"error": str(e), "transcript": transcript}), 502
 

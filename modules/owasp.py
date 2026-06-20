@@ -3,7 +3,7 @@
 from flask import Blueprint, render_template, request, jsonify, session
 
 import llm_client
-from modules import conversations
+from modules import conversations, modelsel
 from data.owasp_labs import LABS, get_lab
 
 bp = Blueprint("owasp", __name__, url_prefix="/owasp")
@@ -54,7 +54,8 @@ def chat(code):
     messages = [{"role": "system", "content": system}] + history + \
                [{"role": "user", "content": user}]
     try:
-        answer = llm_client.chat(messages, temperature=0.6, max_tokens=800)
+        answer = llm_client.chat(messages, temperature=0.6, max_tokens=800,
+                                 model=modelsel.current())
     except llm_client.LLMError as e:
         return jsonify({"error": str(e)}), 502
 

@@ -35,6 +35,18 @@
   draw();
 })();
 
+// 右上角目标模型切换
+document.addEventListener('DOMContentLoaded', ()=>{
+  const sel = document.getElementById('model-select');
+  if(!sel) return;
+  sel.addEventListener('change', async ()=>{
+    const r = await postJSON('/api/set-model', {model: sel.value});
+    const lbl = sel.closest('.target-sel');
+    if(lbl){ lbl.classList.add('flash'); setTimeout(()=>lbl.classList.remove('flash'), 600); }
+    if(!r.ok) sel.value = r.current;
+  });
+});
+
 // 点击「完整渗透语句」直接填入输入框
 document.addEventListener('click', e=>{
   const p = e.target.closest('.payload');

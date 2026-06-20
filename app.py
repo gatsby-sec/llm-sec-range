@@ -4,9 +4,10 @@
 被渗透的目标模型：DeepSeek。
 """
 import socket
-from flask import Flask, render_template
+from flask import Flask, render_template, request, jsonify
 
 import config
+from modules import modelsel
 from modules.ctf import bp as ctf_bp
 from modules.owasp import bp as owasp_bp
 from modules.agent_range import bp as agent_bp
@@ -19,6 +20,19 @@ app.register_blueprint(ctf_bp)
 app.register_blueprint(owasp_bp)
 app.register_blueprint(agent_bp)
 app.register_blueprint(catalog_bp)
+
+
+@app.context_processor
+def inject_models():
+    """让所有模板都能拿到目标模型列表与当前选择。"""
+    return {"models": modelsel.MODELS, "current_model": modelsel.current()}
+
+
+@app.route("/api/set-model", methods=["POST"])
+def set_model():
+    m = (request.json or {}).get("model", "")
+    ok = modelsel.set_model(m)
+    return jsonify({"ok": ok, "current": modelsel.current()})
 
 
 @app.route("/")

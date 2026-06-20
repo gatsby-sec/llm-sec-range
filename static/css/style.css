@@ -60,10 +60,15 @@ code,pre,.mono{font-family:inherit}
   border:1px solid transparent}
 .nav .links a:hover{color:var(--neon);border-color:var(--line);
   background:rgba(0,255,174,.06);text-shadow:none}
-.nav .target{margin-left:auto;font-size:12px;color:var(--amber);
-  border:1px solid rgba(255,204,102,.3);padding:4px 12px;border-radius:20px;
-  background:rgba(255,204,102,.06);box-shadow:0 0 10px rgba(255,204,102,.15)}
-.nav .target::before{content:"● ";color:var(--neon);animation:pulse 1.6s infinite}
+.target-sel{margin-left:auto;display:flex;align-items:center;gap:6px;font-size:12px;
+  color:var(--amber);border:1px solid rgba(255,204,102,.3);padding:4px 8px 4px 12px;
+  border-radius:20px;background:rgba(255,204,102,.06);box-shadow:0 0 10px rgba(255,204,102,.15);
+  transition:.25s}
+.target-sel.flash{border-color:var(--neon);box-shadow:0 0 18px rgba(0,255,174,.4)}
+.target-sel .dot{color:var(--neon);animation:pulse 1.6s infinite}
+.target-sel select{background:transparent;border:0;color:var(--amber);font-family:inherit;
+  font-size:12px;cursor:pointer;outline:none;padding:2px 4px;font-weight:600}
+.target-sel select option{background:var(--panel-solid);color:var(--fg)}
 @keyframes pulse{50%{opacity:.3}}
 
 .wrap{max-width:1120px;margin:0 auto;padding:30px 22px 70px;position:relative;z-index:2}

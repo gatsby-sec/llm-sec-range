@@ -15,7 +15,14 @@
       <a href="/agent/">Agent 靶场</a>
       <a href="/catalog/">聚合清单</a>
     </div>
-    <span class="target">target: deepseek-chat</span>
+    <label class="target-sel" title="选择被攻击的目标模型">
+      <span class="dot">●</span> target:
+      <select id="model-select">
+        {% for m in models %}
+        <option value="{{ m.id }}" {{ 'selected' if m.id==current_model else '' }}>{{ m.label }} · {{ m.note }}</option>
+        {% endfor %}
+      </select>
+    </label>
   </nav>
   <main class="wrap">
     {% block body %}{% endblock %}
