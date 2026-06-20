@@ -19,7 +19,7 @@ def _input_keyword_guard(text):
     return None
 
 
-def _input_llm_guard(text, model=None):
+def _input_llm_guard(text, provider="deepseek", model=None):
     """用 LLM 审查输入意图是否在套密码。"""
     try:
         verdict = llm_client.ask(
@@ -29,6 +29,7 @@ def _input_llm_guard(text, model=None):
             text,
             max_tokens=5,
             temperature=0,
+            provider=provider,
             model=model,
         )
         if "YES" in verdict.upper():
@@ -48,7 +49,7 @@ def _fuzzy_leak(text, secret):
     return secret.upper() in flat
 
 
-def _llm_output_guard(answer, secret, model=None):
+def _llm_output_guard(answer, secret, provider="deepseek", model=None):
     """LLM 审查回答是否泄露了密码。返回 True=泄露。"""
     try:
         verdict = llm_client.ask(
@@ -57,6 +58,7 @@ def _llm_output_guard(answer, secret, model=None):
             answer,
             max_tokens=5,
             temperature=0,
+            provider=provider,
             model=model,
         )
         return "YES" in verdict.upper()
@@ -93,7 +95,8 @@ def chat(level_id):
     defenses = lv["defenses"]
     secret = lv["secret"]
     ctx = f"ctf:{level_id}"
-    model = modelsel.current()
+    ent = modelsel.current_entry()
+    prov, mdl = ent["provider"], ent["model"]
 
     # 输入守卫（被拦截则不进入会话记忆）
     if "input_block_keywords" in defenses:
@@ -102,7 +105,7 @@ def chat(level_id):
             return jsonify({"answer": blocked, "blocked": True,
                             "turns": conversations.count(ctx)})
     if "input_llm_guard" in defenses:
-        blocked = _input_llm_guard(user_msg, model=model)
+        blocked = _input_llm_guard(user_msg, provider=prov, model=mdl)
         if blocked:
             return jsonify({"answer": blocked, "blocked": True,
                             "turns": conversations.count(ctx)})
@@ -112,7 +115,8 @@ def chat(level_id):
     messages = [{"role": "system", "content": lv["system"]}] + history + \
                [{"role": "user", "content": user_msg}]
     try:
-        raw = llm_client.chat(messages, temperature=0.7, max_tokens=600, model=model)
+        raw = llm_client.chat(messages, temperature=0.7, max_tokens=600,
+                              provider=prov, model=mdl)
     except llm_client.LLMError as e:
         return jsonify({"error": str(e)}), 502
 
@@ -122,7 +126,7 @@ def chat(level_id):
 
     # 输出守卫（仅影响展示给用户的内容）
     answer = raw
-    if "llm_guard" in defenses and _llm_output_guard(raw, secret, model=model):
+    if "llm_guard" in defenses and _llm_output_guard(raw, secret, provider=prov, model=mdl):
         answer = "🚫 LLM 输出守卫拦截：检测到回答可能泄露密码，已阻止。"
     elif "output_block_fuzzy" in defenses and _fuzzy_leak(raw, secret):
         answer = "🚫 模糊输出守卫拦截：回答里疑似藏有密码（去符号后匹配）。"

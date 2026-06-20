@@ -53,9 +53,10 @@ def chat(code):
     history = conversations.get(ctx)
     messages = [{"role": "system", "content": system}] + history + \
                [{"role": "user", "content": user}]
+    ent = modelsel.current_entry()
     try:
         answer = llm_client.chat(messages, temperature=0.6, max_tokens=800,
-                                 model=modelsel.current())
+                                 provider=ent["provider"], model=ent["model"])
     except llm_client.LLMError as e:
         return jsonify({"error": str(e)}), 502
 

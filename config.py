@@ -19,9 +19,13 @@ def _load_dotenv():
 
 _load_dotenv()
 
-# ---- 被渗透的目标大模型：DeepSeek（OpenAI 兼容接口）----
-# 在 .env 里设置 DEEPSEEK_API_KEY=sk-xxx（见 .env.example）
+# ---- 被渗透的目标大模型 ----
+# DeepSeek 直连（OpenAI 兼容接口）
 DEEPSEEK_API_KEY = os.environ.get("DEEPSEEK_API_KEY", "sk-REPLACE-ME")
+
+# OpenRouter 聚合（国产 + 国外众多小模型走这里）
+OPENROUTER_API_KEY = os.environ.get("OPENROUTER_API_KEY", "")
+OPENROUTER_BASE_URL = os.environ.get("OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1")
 DEEPSEEK_BASE_URL = os.environ.get("DEEPSEEK_BASE_URL", "https://api.deepseek.com")
 DEEPSEEK_MODEL = os.environ.get("DEEPSEEK_MODEL", "deepseek-chat")
 

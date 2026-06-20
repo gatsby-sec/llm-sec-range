@@ -63,11 +63,12 @@ def run():
                [{"role": "user", "content": user_msg}]
     events = set()
     final_answer = ""
-    model = modelsel.current()
+    ent = modelsel.current_entry()
 
     for step in range(MAX_STEPS):
         try:
-            out = llm_client.chat(messages, temperature=0.3, max_tokens=500, model=model)
+            out = llm_client.chat(messages, temperature=0.3, max_tokens=500,
+                                  provider=ent["provider"], model=ent["model"])
         except llm_client.LLMError as e:
             return jsonify({"error": str(e), "transcript": transcript}), 502
 
