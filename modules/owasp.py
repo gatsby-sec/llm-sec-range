@@ -3,6 +3,7 @@
 from flask import Blueprint, render_template, request, jsonify, session
 
 import llm_client
+from modules import conversations
 from data.owasp_labs import LABS, get_lab
 
 bp = Blueprint("owasp", __name__, url_prefix="/owasp")
@@ -48,10 +49,17 @@ def chat(code):
         return jsonify({"error": "消息为空"}), 400
 
     system, user = _build_messages(lab, user_msg)
+    ctx = f"owasp:{code}"
+    history = conversations.get(ctx)
+    messages = [{"role": "system", "content": system}] + history + \
+               [{"role": "user", "content": user}]
     try:
-        answer = llm_client.ask(system, user, temperature=0.6, max_tokens=800)
+        answer = llm_client.chat(messages, temperature=0.6, max_tokens=800)
     except llm_client.LLMError as e:
         return jsonify({"error": str(e)}), 502
+
+    conversations.append(ctx, "user", user)
+    conversations.append(ctx, "assistant", answer)
 
     # 自动判定（部分关卡，如 XSS / 注入命中即通关）
     auto_solved = False
@@ -62,7 +70,14 @@ def chat(code):
     if auto_solved:
         _mark_solved(code)
 
-    return jsonify({"answer": answer, "auto_solved": auto_solved})
+    return jsonify({"answer": answer, "auto_solved": auto_solved,
+                    "turns": conversations.count(ctx)})
+
+
+@bp.route("/reset/<code>", methods=["POST"])
+def reset(code):
+    conversations.clear(f"owasp:{code}")
+    return jsonify({"ok": True, "turns": 0})
 
 
 def _looks_like_xss(text):

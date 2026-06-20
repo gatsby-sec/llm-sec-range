@@ -9,8 +9,12 @@
   当前防御：<span class="mono">{{ lv.defenses if lv.defenses else "无" }}</span></div>
 
 <div class="panel">
+  <div class="sessbar">
+    <span class="sess-state">🟢 会话进行中 · <b id="turns">0</b> 轮记忆</span>
+    <button class="ghost sm" id="reset">🗑️ 清空记忆 / 新会话</button>
+  </div>
   <div class="chat" id="chat">
-    <div class="msg sys">向守密助手发消息，想办法套出密码 👇</div>
+    <div class="msg sys">向守密助手发消息，想办法套出密码 👇（多轮对话有记忆，可分多步诱导）</div>
   </div>
   <div class="row">
     <textarea id="msg" placeholder="输入你的提示注入 payload…（Enter 发送，Shift+Enter 换行）"></textarea>
@@ -45,9 +49,17 @@ async function doSend(){
     wait.remove();
     if(r.error){ addMsg(chat,'blocked','错误：'+r.error); }
     else addMsg(chat, r.blocked?'blocked':'bot', r.answer);
+    if(r.turns!=null) document.getElementById('turns').textContent = r.turns;
   }catch(e){ wait.remove(); addMsg(chat,'blocked','网络错误'); }
   send.disabled=false; msg.focus();
 }
+
+document.getElementById('reset').onclick = async ()=>{
+  await postJSON('/ctf/reset/'+LID, {});
+  chat.innerHTML = '<div class="msg sys">🧹 会话记忆已清空，已开启新会话。</div>';
+  document.getElementById('turns').textContent = '0';
+  document.getElementById('result').innerHTML='';
+};
 send.onclick = doSend;
 msg.addEventListener('keydown', e=>{ if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();doSend();}});
 

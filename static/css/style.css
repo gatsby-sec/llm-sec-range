@@ -165,6 +165,14 @@ button.ghost{background:transparent;border:1px solid var(--line);color:var(--fg)
 button.ghost:hover{border-color:var(--neon2);color:var(--neon2);box-shadow:var(--glow-cyan)}
 button:disabled{opacity:.45;cursor:not-allowed;filter:grayscale(.4)}
 
+/* 会话管理条 */
+.sessbar{display:flex;align-items:center;justify-content:space-between;gap:12px;
+  margin-bottom:12px;padding:9px 14px;border-radius:10px;
+  background:rgba(4,7,13,.5);border:1px solid var(--line)}
+.sess-state{font-size:12.5px;color:var(--dim);letter-spacing:.3px}
+.sess-state b{color:var(--neon2);font-size:14px}
+button.sm{padding:7px 13px;font-size:12.5px}
+
 .flagbox{display:flex;gap:10px;align-items:center;margin-top:12px}
 .note{background:rgba(4,7,13,.6);border:1px dashed var(--line);border-radius:10px;padding:13px;
   color:var(--dim);font-size:13px}

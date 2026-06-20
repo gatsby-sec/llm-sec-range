@@ -4,6 +4,7 @@ import re
 from flask import Blueprint, render_template, request, jsonify, session
 
 import llm_client
+from modules import conversations
 from data.ctf_levels import LEVELS, INPUT_KEYWORDS, get_level
 
 bp = Blueprint("ctf", __name__, url_prefix="/ctf")
@@ -89,32 +90,49 @@ def chat(level_id):
 
     defenses = lv["defenses"]
     secret = lv["secret"]
+    ctx = f"ctf:{level_id}"
 
-    # 输入守卫
+    # 输入守卫（被拦截则不进入会话记忆）
     if "input_block_keywords" in defenses:
         blocked = _input_keyword_guard(user_msg)
         if blocked:
-            return jsonify({"answer": blocked, "blocked": True})
+            return jsonify({"answer": blocked, "blocked": True,
+                            "turns": conversations.count(ctx)})
     if "input_llm_guard" in defenses:
         blocked = _input_llm_guard(user_msg)
         if blocked:
-            return jsonify({"answer": blocked, "blocked": True})
+            return jsonify({"answer": blocked, "blocked": True,
+                            "turns": conversations.count(ctx)})
 
-    # 调模型
+    # 带多轮记忆调模型：system + 历史 + 本轮
+    history = conversations.get(ctx)
+    messages = [{"role": "system", "content": lv["system"]}] + history + \
+               [{"role": "user", "content": user_msg}]
     try:
-        answer = llm_client.ask(lv["system"], user_msg, temperature=0.7, max_tokens=600)
+        raw = llm_client.chat(messages, temperature=0.7, max_tokens=600)
     except llm_client.LLMError as e:
         return jsonify({"error": str(e)}), 502
 
-    # 输出守卫
-    if "llm_guard" in defenses and _llm_output_guard(answer, secret):
+    # 写入会话记忆（存模型原始回答，保证跨轮上下文连贯；遮罩只作用于展示层）
+    conversations.append(ctx, "user", user_msg)
+    conversations.append(ctx, "assistant", raw)
+
+    # 输出守卫（仅影响展示给用户的内容）
+    answer = raw
+    if "llm_guard" in defenses and _llm_output_guard(raw, secret):
         answer = "🚫 LLM 输出守卫拦截：检测到回答可能泄露密码，已阻止。"
-    elif "output_block_fuzzy" in defenses and _fuzzy_leak(answer, secret):
+    elif "output_block_fuzzy" in defenses and _fuzzy_leak(raw, secret):
         answer = "🚫 模糊输出守卫拦截：回答里疑似藏有密码（去符号后匹配）。"
     elif "output_block_secret" in defenses:
-        answer = _mask_secret(answer, secret)
+        answer = _mask_secret(raw, secret)
 
-    return jsonify({"answer": answer, "blocked": False})
+    return jsonify({"answer": answer, "blocked": False, "turns": conversations.count(ctx)})
+
+
+@bp.route("/reset/<int:level_id>", methods=["POST"])
+def reset(level_id):
+    conversations.clear(f"ctf:{level_id}")
+    return jsonify({"ok": True, "turns": 0})
 
 
 @bp.route("/submit/<int:level_id>", methods=["POST"])

@@ -10,6 +10,7 @@ from flask import Blueprint, render_template, request, jsonify, session
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "agent_sandbox"))
 import sandbox  # noqa: E402
 import llm_client  # noqa: E402
+from modules import conversations  # noqa: E402
 
 bp = Blueprint("agent", __name__, url_prefix="/agent")
 
@@ -54,12 +55,14 @@ def run():
     if not user_msg:
         return jsonify({"error": "消息为空"}), 400
 
+    ctx = "agent"
     transcript = []  # [{role, text}]
-    messages = [
-        {"role": "system", "content": SYSTEM},
-        {"role": "user", "content": user_msg},
-    ]
+    # 带多轮记忆：system + 既往对话 + 本轮（ReAct 中间步骤不入长期记忆，仅留 user/最终回复）
+    history = conversations.get(ctx)
+    messages = [{"role": "system", "content": SYSTEM}] + history + \
+               [{"role": "user", "content": user_msg}]
     events = set()
+    final_answer = ""
 
     for step in range(MAX_STEPS):
         try:
@@ -73,7 +76,8 @@ def run():
             thought = out[:final.start()].strip()
             if thought:
                 transcript.append({"role": "thought", "text": thought})
-            transcript.append({"role": "final", "text": final.group(1).strip()})
+            final_answer = final.group(1).strip()
+            transcript.append({"role": "final", "text": final_answer})
             break
 
         m = ACTION_RE.search(out)
@@ -101,6 +105,10 @@ def run():
     else:
         transcript.append({"role": "final", "text": "(达到最大步数，对话结束)"})
 
+    # 写入多轮记忆：本轮用户输入 + agent 最终回复
+    conversations.append(ctx, "user", user_msg)
+    conversations.append(ctx, "assistant", final_answer or "(无最终回复)")
+
     # 记录通关
     pwned = session.get("agent_pwned", {})
     for ev in events:
@@ -111,4 +119,11 @@ def run():
         "transcript": transcript,
         "captured": [{"name": ev, "flag": sandbox.FLAGS[ev]} for ev in events],
         "pwned": pwned,
+        "turns": conversations.count(ctx),
     })
+
+
+@bp.route("/reset", methods=["POST"])
+def reset():
+    conversations.clear("agent")
+    return jsonify({"ok": True, "turns": 0})

@@ -16,7 +16,12 @@
 
 <div class="panel">
   <p class="note">攻击思路：直接下指令往往被 agent 拒绝，需要<strong>提示注入</strong>——伪造系统更新、注入假的
-    <span class="kbd">Observation:</span>、声称自己是管理员、或把恶意指令藏进看似正常的请求里。</p>
+    <span class="kbd">Observation:</span>、声称自己是管理员、或把恶意指令藏进看似正常的请求里。
+    <b>对话有多轮记忆</b>，可先取得信任再逐步越权。</p>
+  <div class="sessbar" style="margin-top:12px">
+    <span class="sess-state">🟢 与 Agent 的会话 · <b id="turns">0</b> 轮记忆</span>
+    <button class="ghost sm" id="reset">🗑️ 清空记忆 / 新会话</button>
+  </div>
   <div class="row" style="margin-top:12px">
     <textarea id="msg" placeholder="对 agent 说点什么…例如：帮我查一下 A1002 的交易记录"></textarea>
     <button id="send">发送给 Agent</button>
@@ -61,9 +66,17 @@ send.onclick = async ()=>{
         const fb=document.getElementById('flags'); fb.innerHTML='';
         Object.entries(r.pwned).forEach(([k,v])=>{ fb.appendChild(el('div','win',k+': '+v)); });
       }
+      if(r.turns!=null) document.getElementById('turns').textContent = r.turns;
     }
   }catch(e){ trans.innerHTML='<div class="fail">网络错误</div>'; }
   send.disabled=false;
+};
+
+document.getElementById('reset').onclick = async ()=>{
+  await postJSON('/agent/reset', {});
+  document.getElementById('turns').textContent='0';
+  document.getElementById('captured').innerHTML='';
+  trans.innerHTML='<p class="spin">🧹 会话记忆已清空，已开启新会话</p>';
 };
 msg.addEventListener('keydown',e=>{ if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send.click();}});
 </script>
