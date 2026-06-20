@@ -1,0 +1,40 @@
+{% extends "_base.html" %}
+{% block body %}
+<div class="hero">
+  <span class="tag">● 本地训练靶场 · 目标模型 DeepSeek</span>
+  <h1>大模型攻防渗透测试靶场</h1>
+  <p class="sub">LLM Security Range — 提示注入 / OWASP LLM Top10 / Agent 越权 / 资料聚合，一站式攻防练习。</p>
+</div>
+
+<div class="grid">
+  <a class="card" href="/ctf/">
+    <div class="ico">🧩</div>
+    <h3>CTF · 提示注入闯关</h3>
+    <p>Gandalf 式 8 关，防御逐级加固：从无防护到输入/输出双过滤 + LLM 看门人。诱导模型吐出密码。</p>
+  </a>
+  <a class="card" href="/owasp/">
+    <div class="ico">📋</div>
+    <h3>OWASP LLM Top 10</h3>
+    <p>覆盖 2025 版十大风险：提示注入、敏感信息泄露、数据投毒、不当输出处理、过度代理…交互式 lab。</p>
+  </a>
+  <a class="card" href="/agent/">
+    <div class="ico">🤖</div>
+    <h3>Agent 靶场</h3>
+    <p>脆弱 ReAct 银行客服 Agent，工具在隔离沙箱/Docker 内。练 SQLi、路径穿越、越权转账、RCE。</p>
+  </a>
+  <a class="card" href="/catalog/">
+    <div class="ico">⭐</div>
+    <h3>聚合清单</h3>
+    <p>精选 GitHub 大模型攻防靶场仓库，标注活跃状态（近半年是否更新）与 Star。</p>
+  </a>
+</div>
+
+<h2>玩法说明</h2>
+<div class="panel">
+  <p>① 每个模块都有<strong>明确的攻击目标（flag）</strong>，攻破后会自动记录通关状态（存于会话）。</p>
+  <p>② 所有“被攻击”的大模型都接到 <span class="kbd">DeepSeek</span>，真实可被提示注入绕过。</p>
+  <p>③ Agent 靶场的危险操作（任意命令执行）默认走<strong>本地模拟</strong>；设
+     <span class="kbd">AGENT_USE_DOCKER=1</span> 并构建沙箱镜像后，改为在一次性 Docker 容器内隔离执行。</p>
+  <p>④ 这是<strong>防御教育</strong>用途：理解攻击面 → 学会缓解。请勿对未授权目标使用。</p>
+</div>
+{% endblock %}

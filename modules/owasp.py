@@ -1,0 +1,93 @@
+# -*- coding: utf-8 -*-
+"""OWASP LLM Top 10 靶场：路由 + 各关卡攻击/判定逻辑。"""
+from flask import Blueprint, render_template, request, jsonify, session
+
+import llm_client
+from data.owasp_labs import LABS, get_lab
+
+bp = Blueprint("owasp", __name__, url_prefix="/owasp")
+
+
+@bp.route("/")
+def index():
+    solved = set(session.get("owasp_solved", []))
+    return render_template("owasp.html", labs=LABS, solved=solved)
+
+
+@bp.route("/lab/<code>")
+def lab(code):
+    lab = get_lab(code)
+    if not lab:
+        return "关卡不存在", 404
+    solved = set(session.get("owasp_solved", []))
+    # 不把 flag 答案泄进模板
+    public = {k: v for k, v in lab.items()
+              if k not in ("system", "poisoned_doc", "flag_equals")}
+    public["flag_equals_hint"] = "flag_equals" in lab
+    return render_template("owasp_lab.html", lab=public, solved=solved)
+
+
+def _build_messages(lab, user_msg):
+    """根据关卡类型组装发给模型的消息。"""
+    system = lab.get("system", "")
+    if lab.get("rag"):
+        # 模拟检索：把被投毒文档拼进上下文
+        context = lab["poisoned_doc"]
+        user = f"【检索到的文档】\n{context}\n\n【用户问题】\n{user_msg}"
+        return system, user
+    return system, user_msg
+
+
+@bp.route("/chat/<code>", methods=["POST"])
+def chat(code):
+    lab = get_lab(code)
+    if not lab or not lab.get("interactive"):
+        return jsonify({"error": "该关卡不支持对话"}), 400
+    user_msg = (request.json or {}).get("message", "").strip()
+    if not user_msg:
+        return jsonify({"error": "消息为空"}), 400
+
+    system, user = _build_messages(lab, user_msg)
+    try:
+        answer = llm_client.ask(system, user, temperature=0.6, max_tokens=800)
+    except llm_client.LLMError as e:
+        return jsonify({"error": str(e)}), 502
+
+    # 自动判定（部分关卡，如 XSS / 注入命中即通关）
+    auto_solved = False
+    if "flag_contains" in lab and lab["flag_contains"].lower() in answer.lower():
+        auto_solved = True
+    if lab.get("xss") and _looks_like_xss(answer):
+        auto_solved = True
+    if auto_solved:
+        _mark_solved(code)
+
+    return jsonify({"answer": answer, "auto_solved": auto_solved})
+
+
+def _looks_like_xss(text):
+    low = text.lower()
+    triggers = ["onerror=", "onload=", "<script", "javascript:", "onfocus=", "<svg"]
+    return any(t in low for t in triggers)
+
+
+@bp.route("/submit/<code>", methods=["POST"])
+def submit(code):
+    lab = get_lab(code)
+    if not lab:
+        return jsonify({"error": "关卡不存在"}), 404
+    guess = (request.json or {}).get("guess", "").strip()
+    correct = False
+    if "flag_equals" in lab:
+        correct = guess == lab["flag_equals"]
+    elif "flag_contains" in lab:
+        correct = lab["flag_contains"].lower() in guess.lower()
+    if correct:
+        _mark_solved(code)
+    return jsonify({"correct": correct})
+
+
+def _mark_solved(code):
+    solved = set(session.get("owasp_solved", []))
+    solved.add(code)
+    session["owasp_solved"] = list(solved)

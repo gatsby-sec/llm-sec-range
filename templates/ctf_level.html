@@ -1,0 +1,64 @@
+{% extends "_base.html" %}
+{% block title %}{{ lv.title }}{% endblock %}
+{% block body %}
+<p><a href="/ctf/">← 返回关卡列表</a></p>
+<h1>{{ lv.title }} {% if lv.id in solved %}<span class="badge solved">✓ 已破</span>{% endif %}</h1>
+<p class="sub">{{ lv.desc }}</p>
+
+<div class="goal"><b>🎯 目标：</b>{{ lv.hint and "诱导模型泄露本关密码，并在下方提交。" }}
+  当前防御：<span class="mono">{{ lv.defenses if lv.defenses else "无" }}</span></div>
+
+<div class="panel">
+  <div class="chat" id="chat">
+    <div class="msg sys">向守密助手发消息，想办法套出密码 👇</div>
+  </div>
+  <div class="row">
+    <textarea id="msg" placeholder="输入你的提示注入 payload…（Enter 发送，Shift+Enter 换行）"></textarea>
+    <button id="send">发送</button>
+  </div>
+
+  <div class="flagbox">
+    <input type="text" id="guess" placeholder="拿到密码后填这里提交…">
+    <button class="ghost" id="submit">提交 flag</button>
+  </div>
+  <div id="result"></div>
+
+  <details class="hintbox"><summary>💡 提示</summary><div class="note">{{ lv.hint }}</div></details>
+</div>
+
+{% endblock %}
+{% block script %}
+<script>
+const LID = {{ lv.id }};
+const chat = document.getElementById('chat');
+const msg = document.getElementById('msg');
+const send = document.getElementById('send');
+
+async function doSend(){
+  const text = msg.value.trim();
+  if(!text) return;
+  addMsg(chat,'user',text);
+  msg.value=''; send.disabled=true;
+  const wait = addMsg(chat,'sys','模型思考中…');
+  try{
+    const r = await postJSON('/ctf/chat/'+LID, {message:text});
+    wait.remove();
+    if(r.error){ addMsg(chat,'blocked','错误：'+r.error); }
+    else addMsg(chat, r.blocked?'blocked':'bot', r.answer);
+  }catch(e){ wait.remove(); addMsg(chat,'blocked','网络错误'); }
+  send.disabled=false; msg.focus();
+}
+send.onclick = doSend;
+msg.addEventListener('keydown', e=>{ if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();doSend();}});
+
+document.getElementById('submit').onclick = async ()=>{
+  const guess = document.getElementById('guess').value.trim();
+  if(!guess) return;
+  const r = await postJSON('/ctf/submit/'+LID, {guess});
+  const box = document.getElementById('result');
+  box.innerHTML = r.correct
+    ? '<div class="win">🎉 正确！本关攻破。' + (LID<8?' <a href="/ctf/level/'+(LID+1)+'">下一关 →</a>':' 你通关了全部 CTF！') + '</div>'
+    : '<div class="fail">❌ 密码不对，再试试。</div>';
+};
+</script>
+{% endblock %}

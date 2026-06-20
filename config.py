@@ -1,0 +1,36 @@
+"""全局配置。密钥从 .env / 环境变量读取（不入库，避免泄露与被自动吊销）。"""
+import os
+import secrets
+
+
+def _load_dotenv():
+    """极简 .env 加载器（无三方依赖）。"""
+    path = os.path.join(os.path.dirname(__file__), ".env")
+    if not os.path.exists(path):
+        return
+    with open(path, encoding="utf-8") as f:
+        for line in f:
+            line = line.strip()
+            if not line or line.startswith("#") or "=" not in line:
+                continue
+            k, v = line.split("=", 1)
+            os.environ.setdefault(k.strip(), v.strip().strip('"').strip("'"))
+
+
+_load_dotenv()
+
+# ---- 被渗透的目标大模型：DeepSeek（OpenAI 兼容接口）----
+# 在 .env 里设置 DEEPSEEK_API_KEY=sk-xxx（见 .env.example）
+DEEPSEEK_API_KEY = os.environ.get("DEEPSEEK_API_KEY", "sk-REPLACE-ME")
+DEEPSEEK_BASE_URL = os.environ.get("DEEPSEEK_BASE_URL", "https://api.deepseek.com")
+DEEPSEEK_MODEL = os.environ.get("DEEPSEEK_MODEL", "deepseek-chat")
+
+# Flask
+SECRET_KEY = os.environ.get("SECRET_KEY", secrets.token_hex(16))
+
+# Web 服务端口：随机（遵循“不要硬编码端口”约定），可用 PORT 覆盖
+PORT = int(os.environ.get("PORT", "0")) or None  # None -> 运行时随机分配
+
+# Agent 沙箱：是否走 Docker 容器执行（生产隔离）。本地快速体验可关。
+AGENT_USE_DOCKER = os.environ.get("AGENT_USE_DOCKER", "0") == "1"
+AGENT_DOCKER_IMAGE = os.environ.get("AGENT_DOCKER_IMAGE", "llm-sec-range-agent-sandbox")
