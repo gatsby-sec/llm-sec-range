@@ -37,6 +37,11 @@
   <details class="hintbox"><summary>💡 思路提示</summary><div class="note">{{ lv.hint }}</div></details>
 </div>
 
+<h2>🔬 对话检查器 <span class="insp-sub">聊天框之外 · 每轮完整提交 prompt 与模型原始返回（flag 本体已打码）</span></h2>
+<div class="panel"><div class="inspector" id="inspector">
+  <p class="spin insp-ph">发送后，这里显示每轮发给模型的完整 prompt 与原始返回</p>
+</div></div>
+
 {% endblock %}
 {% block script %}
 <script>
@@ -56,6 +61,7 @@ async function doSend(){
     wait.remove();
     if(r.error){ addMsg(chat,'blocked','错误：'+r.error); }
     else addMsg(chat, r.blocked?'blocked':'bot', r.answer);
+    if(r.debug) appendInspector(r.debug);
     if(r.turns!=null) document.getElementById('turns').textContent = r.turns;
   }catch(e){ wait.remove(); addMsg(chat,'blocked','网络错误'); }
   send.disabled=false; msg.focus();
@@ -66,6 +72,7 @@ document.getElementById('reset').onclick = async ()=>{
   chat.innerHTML = '<div class="msg sys">🧹 会话记忆已清空，已开启新会话。</div>';
   document.getElementById('turns').textContent = '0';
   document.getElementById('result').innerHTML='';
+  clearInspector();
 };
 send.onclick = doSend;
 msg.addEventListener('keydown', e=>{ if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();doSend();}});

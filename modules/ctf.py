@@ -4,7 +4,7 @@ import re
 from flask import Blueprint, render_template, request, jsonify, session
 
 import llm_client
-from modules import conversations, modelsel
+from modules import conversations, modelsel, inspect_util
 from data.ctf_levels import LEVELS, INPUT_KEYWORDS, get_level
 
 bp = Blueprint("ctf", __name__, url_prefix="/ctf")
@@ -103,12 +103,14 @@ def chat(level_id):
         blocked = _input_keyword_guard(user_msg)
         if blocked:
             return jsonify({"answer": blocked, "blocked": True,
-                            "turns": conversations.count(ctx)})
+                            "turns": conversations.count(ctx),
+                            "debug": inspect_util.note(blocked)})
     if "input_llm_guard" in defenses:
         blocked = _input_llm_guard(user_msg, provider=prov, model=mdl)
         if blocked:
             return jsonify({"answer": blocked, "blocked": True,
-                            "turns": conversations.count(ctx)})
+                            "turns": conversations.count(ctx),
+                            "debug": inspect_util.note(blocked)})
 
     # 带多轮记忆调模型：system + 历史 + 本轮
     history = conversations.get(ctx)
@@ -119,6 +121,8 @@ def chat(level_id):
                               provider=prov, model=mdl)
     except llm_client.LLMError as e:
         return jsonify({"error": str(e)}), 502
+
+    debug = inspect_util.build(messages, raw, [secret])
 
     # 写入会话记忆（存模型原始回答，保证跨轮上下文连贯；遮罩只作用于展示层）
     conversations.append(ctx, "user", user_msg)
@@ -133,7 +137,8 @@ def chat(level_id):
     elif "output_block_secret" in defenses:
         answer = _mask_secret(raw, secret)
 
-    return jsonify({"answer": answer, "blocked": False, "turns": conversations.count(ctx)})
+    return jsonify({"answer": answer, "blocked": False,
+                    "turns": conversations.count(ctx), "debug": debug})
 
 
 @bp.route("/reset/<int:level_id>", methods=["POST"])

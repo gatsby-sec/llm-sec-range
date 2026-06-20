@@ -38,6 +38,11 @@
   {% endif %}
   <details class="hintbox"><summary>💡 思路提示</summary><div class="note">{{ lab.hint }}</div></details>
 </div>
+
+<h2>🔬 对话检查器 <span class="insp-sub">聊天框之外 · 每轮完整提交 prompt 与模型原始返回（藏在系统提示里的 flag 已打码）</span></h2>
+<div class="panel"><div class="inspector" id="inspector">
+  <p class="spin insp-ph">发送后，这里显示每轮发给模型的完整 prompt 与原始返回</p>
+</div></div>
 {% else %}
 <div class="panel">
   <h2 style="margin-top:0">缓解措施 Checklist</h2>
@@ -82,6 +87,7 @@ async function doSend(){
         setTimeout(()=>{ if(window.__xss_fired || r.auto_solved){ markWin(' XSS 探针被触发。'); } }, 400);
       }
       if(r.auto_solved){ markWin(); }
+      if(r.debug) appendInspector(r.debug);
       if(r.turns!=null) document.getElementById('turns').textContent = r.turns;
     }
   }catch(e){ wait.remove(); addMsg(chat,'blocked','网络错误'); }
@@ -94,6 +100,7 @@ document.getElementById('reset').onclick = async ()=>{
   document.getElementById('turns').textContent = '0';
   document.getElementById('result').innerHTML='';
   const pv=document.getElementById('preview'); if(pv) pv.innerHTML='<i style="color:#888">渲染预览区</i>';
+  clearInspector();
 };
 send.onclick = doSend;
 msg.addEventListener('keydown', e=>{ if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();doSend();}});

@@ -56,6 +56,31 @@ document.addEventListener('click', e=>{
     box.dispatchEvent(new Event('input')); window.scrollTo({top:box.getBoundingClientRect().top+scrollY-200,behavior:'smooth'}); }
 });
 
+// 对话检查器：渲染每轮完整提交 messages + 模型原始返回
+const ROLE_CN = {system:'system', user:'user', assistant:'assistant', note:'note'};
+function appendInspector(debug){
+  const box = document.getElementById('inspector');
+  if(!box || !debug) return;
+  const ph = box.querySelector('.insp-ph'); if(ph) ph.remove();
+  const n = box.querySelectorAll('.insp-round').length + 1;
+  const wrap = document.createElement('div'); wrap.className = 'insp-round';
+  wrap.appendChild(elInsp('div','insp-rh','▸ ROUND '+n+' · 提交 messages（'+debug.sent.length+' 条）'));
+  debug.sent.forEach(m=>{
+    const b = document.createElement('div'); b.className = 'insp-msg insp-'+(m.role||'user');
+    const tag = document.createElement('span'); tag.className='insp-role'; tag.textContent='['+(ROLE_CN[m.role]||m.role)+']';
+    const c = document.createElement('span'); c.className='insp-c'; c.textContent = m.content;
+    b.appendChild(tag); b.appendChild(c); wrap.appendChild(b);
+  });
+  wrap.appendChild(elInsp('div','insp-rh ret','◂ 模型原始返回'));
+  wrap.appendChild(elInsp('div','insp-raw', debug.raw));
+  box.appendChild(wrap); box.scrollTop = box.scrollHeight;
+}
+function elInsp(t,c,txt){ const e=document.createElement(t); e.className=c; e.textContent=txt; return e; }
+function clearInspector(){
+  const box=document.getElementById('inspector');
+  if(box) box.innerHTML='<p class="spin insp-ph">发送后，这里显示每轮发给模型的完整 prompt 与原始返回</p>';
+}
+
 // 通用工具
 async function postJSON(url, body){
   const r = await fetch(url, {method:'POST', headers:{'Content-Type':'application/json'},

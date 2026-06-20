@@ -3,7 +3,7 @@
 from flask import Blueprint, render_template, request, jsonify, session
 
 import llm_client
-from modules import conversations, modelsel
+from modules import conversations, modelsel, inspect_util
 from data.owasp_labs import LABS, get_lab
 
 bp = Blueprint("owasp", __name__, url_prefix="/owasp")
@@ -63,6 +63,11 @@ def chat(code):
     conversations.append(ctx, "user", user)
     conversations.append(ctx, "assistant", answer)
 
+    # 只打码「藏在 system prompt 里的 flag」（行为型目标如 PWNED 保持可见）
+    secrets = [t for t in (lab.get("flag_equals"), lab.get("flag_contains"))
+               if t and t in system]
+    debug = inspect_util.build(messages, answer, secrets)
+
     # 自动判定（部分关卡，如 XSS / 注入命中即通关）
     auto_solved = False
     if "flag_contains" in lab and lab["flag_contains"].lower() in answer.lower():
@@ -73,7 +78,7 @@ def chat(code):
         _mark_solved(code)
 
     return jsonify({"answer": answer, "auto_solved": auto_solved,
-                    "turns": conversations.count(ctx)})
+                    "turns": conversations.count(ctx), "debug": debug})
 
 
 @bp.route("/reset/<code>", methods=["POST"])
