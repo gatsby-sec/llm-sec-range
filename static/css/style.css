@@ -182,6 +182,22 @@ button.sm{padding:7px 13px;font-size:12.5px}
 @keyframes winpop{from{opacity:0;transform:scale(.96)}}
 .fail{background:rgba(255,77,109,.08);border:1px solid rgba(255,77,109,.4);color:var(--red);
   padding:11px;border-radius:10px;margin-top:12px}
+/* 完整渗透语句 */
+.payloads{margin-top:14px;padding:14px 16px;border-radius:12px;
+  background:linear-gradient(135deg,rgba(255,43,214,.05),rgba(34,211,238,.04));
+  border:1px solid rgba(255,43,214,.22)}
+.ptitle{font-size:13px;font-weight:700;color:var(--magenta);letter-spacing:.4px;margin-bottom:10px;
+  text-shadow:0 0 12px rgba(255,43,214,.3)}
+.ptitle span{color:var(--dim);font-weight:400;font-size:11.5px;margin-left:6px}
+code.payload{display:block;white-space:pre-wrap;word-break:break-word;cursor:pointer;
+  background:rgba(4,7,13,.75);border:1px solid var(--line);border-left:3px solid var(--magenta);
+  border-radius:8px;padding:10px 13px;margin:8px 0;font-size:13px;color:#e7d6f0;transition:.15s}
+code.payload::before{content:"$ ";color:var(--magenta);font-weight:700}
+code.payload:hover{border-color:var(--neon2);border-left-color:var(--neon2);
+  background:rgba(34,211,238,.08);box-shadow:0 0 16px rgba(34,211,238,.12);color:#fff}
+code.payload:active{transform:scale(.995)}
+.pnote{font-size:12.5px;color:var(--dim);margin:10px 2px 0;line-height:1.7}
+
 .hintbox{margin-top:12px}
 .hintbox summary{cursor:pointer;color:var(--amber)}
 .hintbox summary:hover{text-shadow:0 0 10px rgba(255,204,102,.4)}

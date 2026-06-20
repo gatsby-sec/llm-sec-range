@@ -35,6 +35,15 @@
   draw();
 })();
 
+// 点击「完整渗透语句」直接填入输入框
+document.addEventListener('click', e=>{
+  const p = e.target.closest('.payload');
+  if(!p) return;
+  const box = document.getElementById('msg');
+  if(box){ box.value = p.dataset.fill || p.textContent; box.focus();
+    box.dispatchEvent(new Event('input')); window.scrollTo({top:box.getBoundingClientRect().top+scrollY-200,behavior:'smooth'}); }
+});
+
 // 通用工具
 async function postJSON(url, body){
   const r = await fetch(url, {method:'POST', headers:{'Content-Type':'application/json'},

@@ -29,7 +29,14 @@
     <button class="ghost" id="submit">提交 flag</button>
   </div>{% endif %}
   <div id="result"></div>
-  <details class="hintbox"><summary>💡 提示</summary><div class="note">{{ lab.hint }}</div></details>
+  {% if lab.payloads %}
+  <div class="payloads">
+    <div class="ptitle">⚔️ 完整渗透语句 <span>点击直接填入输入框</span></div>
+    {% for p in lab.payloads %}<code class="payload">{{ p }}</code>{% endfor %}
+    {% if lab.payload_note %}<p class="pnote">💡 {{ lab.payload_note }}</p>{% endif %}
+  </div>
+  {% endif %}
+  <details class="hintbox"><summary>💡 思路提示</summary><div class="note">{{ lab.hint }}</div></details>
 </div>
 {% else %}
 <div class="panel">

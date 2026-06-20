@@ -27,7 +27,14 @@
   </div>
   <div id="result"></div>
 
-  <details class="hintbox"><summary>💡 提示</summary><div class="note">{{ lv.hint }}</div></details>
+  {% if lv.payloads %}
+  <div class="payloads">
+    <div class="ptitle">⚔️ 完整渗透语句 <span>点击直接填入输入框</span></div>
+    {% for p in lv.payloads %}<code class="payload">{{ p }}</code>{% endfor %}
+    {% if lv.payload_note %}<p class="pnote">💡 {{ lv.payload_note }}</p>{% endif %}
+  </div>
+  {% endif %}
+  <details class="hintbox"><summary>💡 思路提示</summary><div class="note">{{ lv.hint }}</div></details>
 </div>
 
 {% endblock %}
