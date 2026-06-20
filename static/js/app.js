@@ -93,8 +93,20 @@ function el(tag, cls, text){
   if(text!=null) e.textContent = text;
   return e;
 }
+// 安全的轻量 Markdown：先转义 HTML 防 XSS，再渲染 **粗体** / `代码` / *斜体* / 换行
+function mdSafe(s){
+  const esc = String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  return esc
+    .replace(/\*\*([^*]+)\*\*/g,'<strong>$1</strong>')
+    .replace(/`([^`]+)`/g,'<code>$1</code>')
+    .replace(/(^|[^*])\*([^*\n]+)\*(?!\*)/g,'$1<em>$2</em>')
+    .replace(/\n/g,'<br>');
+}
 function addMsg(box, cls, text){
-  const m = el('div', 'msg '+cls, text);
+  const m = el('div', 'msg '+cls);
+  // 仅对模型回答(bot)渲染 Markdown；用户/拦截/系统提示保持纯文本
+  if(/\bbot\b/.test(cls)) m.innerHTML = mdSafe(text);
+  else m.textContent = text;
   box.appendChild(m);
   box.scrollTop = box.scrollHeight;
   return m;
